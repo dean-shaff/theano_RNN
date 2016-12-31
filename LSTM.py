@@ -23,6 +23,10 @@ class LSTMLayer(object):
         nout = dim.get('out_dim')
         nhid = dim.get('hid_dim')
         ncell = dim.get('cell_dim', nhid)
+        self.nin = nin
+        self.nout = nout 
+        self.nhid = nhid 
+        self.ncell = ncell
         # print("hidden dim", nhid)
 
         # Input
@@ -44,11 +48,16 @@ class LSTMLayer(object):
         self.WhOm = theano.shared(uni(-np.sqrt(1.0/(nhid*nhid)), np.sqrt(1.0/(nhid**nhid)),(nhid, nhid)).astype(theano.config.floatX),name='WhOm')
         self.WcOm = theano.shared(uni(-np.sqrt(1.0/(ncell*nhid)), np.sqrt(1.0/(ncell*nhid)),(ncell, nhid)).astype(theano.config.floatX),name='WcOm')
 
+        # Sequence output 
+        self.Wy = theano.shared(uni(-np.sqrt(1.0/(nhid*nout)), np.sqrt(1.0/(nhid*nout)),(nhid,nout)).astype(theano.config.floatX),name='Wy')
+        self.by = theano.shared(np.zeros(nout), name='by')
+
         self.params = [
                         self.WiL, self.WhL, self.WcL,
                         self.WiPhi, self.WhPhi, self.WcPhi,
                         self.WiCell, self.WhCell,
-                        self.WiOm, self.WhOm, self.WcOm
+                        self.WiOm, self.WhOm, self.WcOm,
+                        self.Wy, self.by
                     ]
         def recurrent_step(x_t,b_tm1,s_tm1):
             """
@@ -68,28 +77,30 @@ class LSTMLayer(object):
             # Output 
             b_Om = T.tanh(T.dot(x_t, self.WiOm) + T.dot(b_tm1,self.WhOm) + T.dot(s_t, self.WcOm))
             # Final output (What gets sent to the next step in the recurrence) 
-            b_Cell = T.nnet.sigmoid(b_Om*T.tanh(s_t))
+            b_Cell = b_Om*T.tanh(s_t)
+            # Sequence output
+            o_t = T.nnet.softmax(T.dot(b_Cell, self.Wy) + self.by)
 
-            return b_Cell, s_t 
+            return b_Cell, s_t, o_t 
 
-        b_Cells, _ = theano.scan(recurrent_step,
+        out, _ = theano.scan(recurrent_step,
                                 truncate_gradient=truncate,
                                 sequences = X,
                                 outputs_info=[
-                                                # {'initial':X[0]},
                                                 {'initial':T.zeros((X.shape[1],nhid))},
-                                                {'initial':T.zeros((X.shape[1],ncell))}
+                                                {'initial':T.zeros((X.shape[1],ncell))},
+                                                {'initial':None}
                                             ],
                                 n_steps=X.shape[0])
 
-        self.out = b_Cells[0]
-
+        self.b_out = out[0]
+        self.pred = out[2]
 
 if __name__ == "__main__":
     x = T.tensor3('x')
-    lstm = LSTMLayer(x,{'in_dim':100,'hid_dim':100})
+    lstm = LSTMLayer(x,{'in_dim':100,'hid_dim':100,'out_dim':20})
     t0 = time.time()
-    f = theano.function([x],lstm.out)
+    f = theano.function([x],lstm.pred)
     print("Took {:.4f} seconds to compile".format(time.time() - t0))
     x0 = np.random.randn(150,50,100) #sequence length,  batch size, character length (input length)
     res = f(x0)

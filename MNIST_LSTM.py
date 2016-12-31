@@ -48,20 +48,21 @@ def create_train_comp_graph(x,y):
 	index = T.scalar('index', dtype='int64')
 
 	hid_dim = 100
-	lstmlayer = LSTMLayer(x,{'in_dim':28,'hid_dim':hid_dim})
+	lstmlayer = LSTMLayer(x,{'in_dim':28,'hid_dim':hid_dim,'out_dim':10})
 	# now do the mean pooling 
 	# mean_pool = T.mean(lstmlayer.out, axis=0)
-	last_out = lstmlayer.out[-1]
-	# now create the new model parameters and creates
-	# log regression layer. 
-	Wy = theano.shared(np.random.uniform(-np.sqrt(1.0/(28*hid_dim)),np.sqrt(1.0/(10*hid_dim)),(hid_dim,10)),name='Wy')
-	by = theano.shared(np.zeros(10),name='by')
-	# logregout = T.nnet.softmax(T.dot(mean_pool, Wy) + by)
-	logregout = T.nnet.softmax(T.dot(last_out, Wy) + by)
+	# last_out = lstmlayer.out[-1]
+	# # now create the new model parameters and creates
+	# # log regression layer. 
+	# Wy = theano.shared(np.random.uniform(-np.sqrt(1.0/(28*hid_dim)),np.sqrt(1.0/(10*hid_dim)),(hid_dim,10)),name='Wy')
+	# by = theano.shared(np.zeros(10),name='by')
+	# # logregout = T.nnet.softmax(T.dot(mean_pool, Wy) + by)
+	# logregout = T.nnet.softmax(T.dot(last_out, Wy) + by)
+	prob_final = lstmlayer.pred[-1]
 
-	pred = T.argmax(logregout,axis=1)
+	pred = T.argmax(prob_final,axis=1)
 
-	cost = -T.mean(T.log(logregout)[T.arange(y.shape[0]),y])
+	cost = -T.mean(T.log(prob_final)[T.arange(y.shape[0]),y])
 
 	error = T.mean(T.neq(pred, y))
 
