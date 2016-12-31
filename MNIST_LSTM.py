@@ -104,9 +104,12 @@ def train(train_model, error,data_pack, lr, mb, nepochs, **kwargs):
 	for epoch in xrange(nepochs):
 		accum_cost = 0
 		for i in xrange(train_batches):
+			t0 = time.time()
 			cur_cost = train_model(i, lr, mb)
+			eval_time = time.time() - t0
 			accum_cost += cur_cost
 			if (i % test_rate == 0):
+				print("Last evaluation time: {:.4f}".format(eval_time))
 				print("Current cost: {}".format(accum_cost / float(test_rate)))
 				accum_cost = 0
 				cur_err_test = error(test_in[:,:1000,:],test_obs[:1000])
