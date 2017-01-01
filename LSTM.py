@@ -108,12 +108,39 @@ class LSTMLayer(object):
         self.b_out = out[0]
         self.pred = out[2]
 
+    def neg_log_likelihood(self, x,y):
+
+        # y_arg_max = T.argmax(y, axis=1)
+        return -T.mean(T.log(x)[T.arange(y.shape[0]),y])
+
+    def log_cost_sequence(self, y):
+
+        log_like, _ = theano.scan(self.neg_log_likelihood, 
+                                sequences=[self.pred,T.argmax(y,axis=2)])
+
+        return T.mean(log_like)
+
+    def error(self, x,y):
+        """
+        The generic function -- calculates error between two 2d tensors. 
+        """
+        return T.mean(T.neq(T.argmax(x, axis=1),T.argmax(y, axis=1)))
+
+    def error_sequence(self,y):
+
+        # err, _ = theano.scan(self.error, 
+        #                     sequences = [self.pred,y])        
+
+        err = T.mean(T.neq(T.argmax(self.pred, axis=2), T.argmax(y, axis=2)))
+
+        return err
+
 
     def log_cost_classify(self,y):
 
-        return -T.mean(T.log(self.pred[-1])[T.arange(y.shape[0]),y])
+        return self.neg_log_likelihood(self.pred[-1],y)
 
-    def class_error(self,y):
+    def error_classify(self,y):
 
         return T.mean(T.neq(T.argmax(self.pred[-1],axis=1), y))
 

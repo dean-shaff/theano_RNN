@@ -37,9 +37,14 @@ class SGD(object):
 		momentum = T.scalar('momentum')
 		index = T.scalar('index', dtype='int64')
 
-		cost = self.model.log_cost_classify(y)
-
-		error = self.model.class_error(y)
+		if (len(self.ds.test_obs.data.get_value().shape) == 2):
+			logging.info("Performing classification task.")
+			cost = self.model.log_cost_classify(y)
+			error = self.model.error_classify(y)
+		else:
+			logging.info("Performing sequence classification task.")
+			cost = self.model.log_cost_sequence(y)
+			error = self.model.error_sequence(y)
 
 		grad_params = [] 
 		updates = [] 
@@ -97,20 +102,28 @@ class SGD(object):
 		test_rate = kwargs.get('test_rate',50)
 		save_rate = kwargs.get('save_rate',-1)
 
+		test_amount = 1000
+
+		test_in = self.ds.test_in.data.get_value()[:test_amount]
+		test_obs = self.ds.test_obs.data.get_value()[:test_amount]
+
 		train_batches = self.ds.get_train_batches(mb)
-		logging.info("Starting training...")
+		logging.info("Starting training. There are {} iterations per epoch.".format(train_batches))
 		for epoch in xrange(nepochs):
-			accum_cost = 0 
+			best_cost = 100. 
 			logging.info("Current epoch {}".format(epoch))
 			for i in xrange(train_batches):
 				t0 = time.time()
 				cur_cost = self.train_fn(i, lr, mb)
 				eval_time = time.time() - t0
-				accum_cost += cur_cost
+				if (cur_cost < best_cost):
+					best_cost = cur_cost
+					logging.info("Current cost: {}".format(best_cost))
+					logging.info("Time calculating cost: {:.4f}".format(time.time()- t0))
+
 				if (i % test_rate == 0):
-					logging.info("Current cost: {}\n".format(accum_cost / float(test_rate)))
-					accum_cost = 0 
+					cur_err_test = self.error_fn(test_in, test_obs)
 					# cur_err_test = error(test_in[:,:test_amount,:],test_obs[:test_amount])
-					# print("Current test error: {}".format(cur_err_test))
+					print("Current test error: {}\n".format(cur_err_test))
 					# cur_err_train = error(train_in[:,:test_amount,:], train_obs[:test_amount])
 					# print("Current train error: {}".format(cur_err_train))

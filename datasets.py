@@ -2,10 +2,12 @@ import time
 import pdb
 import cPickle
 import gzip
+import logging 
 
 import numpy as np 
 import theano 
 import theano.tensor as T 
+import h5py
 
 class Datapack(object):
     """
@@ -17,11 +19,70 @@ class Datapack(object):
         self.dtype = dtype
 
     def __getitem__(self,ind):
+        """
+        Not super happy with this solution right now.
+        """
         if self.dtype == 'sequence':
             return self.data[:,ind,:]
         elif self.dtype == 'vector':
             return self.data[ind]
- 
+
+class CharacterDataset(object):
+
+    def __init__(self, filename):
+
+        self.filename = filename
+        print("Loading data into memory")
+        t0 = time.time() 
+        f = h5py.File(self.filename,'r') 
+        dat = f['dat'][...]
+        dat = dat[:int(dat.shape[0]*0.2)]
+        print("Data loaded from hdf5 file. Took {:.2f} seconds".format(time.time() - t0))
+        chars = f.attrs['chars'] 
+        dat_one_hot = np.zeros((dat.shape[0], len(chars)),dtype=theano.config.floatX) #need float because we're doing regression 
+        dat_one_hot[np.arange(dat.shape[0]),dat] = 1.0 
+        print("One hot vectors generated. Took {:.2f} second".format(time.time() - t0))
+        input_dat = dat_one_hot[:-1]
+        obs_dat = dat_one_hot[1:]
+        f.close() 
+
+        self.chars = chars
+        self.char_len = len(chars) 
+        self.data = dat 
+        self.data_one_hot = dat_one_hot 
+
+        self.obs_dat = obs_dat 
+        self.input_dat = input_dat
+
+    def cut_by_sequence(self, seq_len):
+        """
+        Cut up the dataset into matrices, each (seq_len x char_len) big.
+        This also creates training and testing datasets. 
+        args:
+            - seq_len: The length of the sequence 
+        """
+        self.seq_len = seq_len
+        print('Creating shared variables...') 
+        t0 = time.time()
+        n_seq = (self.data.shape[0] // seq_len) -1
+
+        obs_dat = self.obs_dat[:n_seq*seq_len,:].reshape((n_seq,seq_len,self.char_len))
+        self.train_obs = Datapack(theano.shared(obs_dat[:int(0.6*n_seq),:,:].swapaxes(0,1)),"sequence")
+        self.test_obs = Datapack(theano.shared(obs_dat[int(0.6*n_seq):,:,:].swapaxes(0,1)),"sequence")
+
+        in_dat = self.input_dat[:n_seq*seq_len,:].reshape((n_seq,seq_len,self.char_len))
+        self.train_in = Datapack(theano.shared(in_dat[:int(0.6*n_seq),:,:].swapaxes(0,1)),"sequence")
+        self.test_in = Datapack(theano.shared(in_dat[int(0.6*n_seq):,:,:].swapaxes(0,1)),"sequence")
+        print("Created shared variables. Took {:.2f} seconds.".format(time.time() - t0))
+        
+
+    def get_train_batches(self, mbsize):
+        """
+        args:
+            - mbsize (int): The size of the minibatch
+        """
+        return int(self.train_obs.data.get_value().shape[1] // mbsize)
+
 class MNISTDataset(object):
     """
     A class that contains the training, testing and validation sets for MNIST.
@@ -65,6 +126,8 @@ class MNISTDataset(object):
 
 if __name__ == '__main__':
 
-    mnist = MNISTDataset("./data/mnist.pkl.gz")
+    # mnist = MNISTDataset("./data/mnist.pkl.gz")
     # print(mnist.train[0:100].shape)
+    char_ds = CharacterDataset("./data/shakespeare.hdf5")
+    char_ds.cut_by_sequence(50)
     pdb.set_trace()
