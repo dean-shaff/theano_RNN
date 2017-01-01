@@ -108,6 +108,17 @@ class LSTMLayer(object):
         self.b_out = out[0]
         self.pred = out[2]
 
+
+    def log_cost_classify(self,y):
+
+        return -T.mean(T.log(self.pred[-1])[T.arange(y.shape[0]),y])
+
+    def class_error(self,y):
+
+        return T.mean(T.neq(T.argmax(self.pred[-1],axis=1), y))
+
+
+
 if __name__ == "__main__":
     x = T.tensor3('x')
     lstm = LSTMLayer(x,{'in_dim':100,'hid_dim':100,'out_dim':20})

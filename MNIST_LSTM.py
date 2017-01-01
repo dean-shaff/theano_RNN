@@ -8,7 +8,8 @@ import theano
 import theano.tensor as T 
 
 from LSTM import LSTMLayer 
-
+from SGD import SGD
+from datasets import MNISTDataset
 
 def MNIST_processor(mnist_file):
     print("Loading data into memory")
@@ -121,6 +122,18 @@ def train(train_model, error,pred_fn, data_pack, lr, mb, nepochs, **kwargs):
 if __name__ == '__main__':
 	x = T.tensor3('x')
 	y = T.lvector('y')
+
+	mnist = MNISTDataset("./data/mnist.pkl.gz")
+
+	hid_dim = 100
+	lstmlayer = LSTMLayer(x,{'in_dim':28,'hid_dim':hid_dim,'out_dim':10})
+
+	trainer = SGD(lstmlayer, mnist)
+
+	trainer.compile_functions(x,y)
+
+	trainer.train(0.01, 10,1000)	
+
 	# data_pack = MNIST_processor("./data/mnist.pkl.gz")
-	train_model, error, pred_fn, data_pack = create_train_comp_graph(x,y)
-	train(train_model, error, pred_fn, data_pack, 0.001, 10, 1000, test_rate=100)
+	# train_model, error, pred_fn, data_pack = create_train_comp_graph(x,y)
+	# train(train_model, error, pred_fn, data_pack, 0.001, 10, 1000, test_rate=100)
