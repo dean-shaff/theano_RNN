@@ -49,28 +49,19 @@ def create_train_comp_graph(x,y):
 
 	hid_dim = 100
 	lstmlayer = LSTMLayer(x,{'in_dim':28,'hid_dim':hid_dim,'out_dim':10})
-	# now do the mean pooling 
-	# mean_pool = T.mean(lstmlayer.out, axis=0)
-	# last_out = lstmlayer.out[-1]
-	# # now create the new model parameters and creates
-	# # log regression layer. 
-	# Wy = theano.shared(np.random.uniform(-np.sqrt(1.0/(28*hid_dim)),np.sqrt(1.0/(10*hid_dim)),(hid_dim,10)),name='Wy')
-	# by = theano.shared(np.zeros(10),name='by')
-	# # logregout = T.nnet.softmax(T.dot(mean_pool, Wy) + by)
-	# logregout = T.nnet.softmax(T.dot(last_out, Wy) + by)
+
 	prob_final = lstmlayer.pred[-1]
 
 	pred = T.argmax(prob_final,axis=1)
 
 	cost = -T.mean(T.log(prob_final)[T.arange(y.shape[0]),y])
+	# cost = T.nnet.categorical_crossentropy(pred, y)
 
 	error = T.mean(T.neq(pred, y))
 
-	params = lstmlayer.params + [Wy, by]
+	grad_params = [T.grad(cost, p) for p in lstmlayer.params]
 
-	grad_params = [T.grad(cost, p) for p in params]
-
-	updates = [(p, p-lr*g) for p, g in zip(params, grad_params)]
+	updates = [(p, p-lr*g) for p, g in zip(lstmlayer.params, grad_params)]
 
 	t0 = time.time()
 	train_model = theano.function(
@@ -88,14 +79,19 @@ def create_train_comp_graph(x,y):
 		inputs = [x,y],
 		outputs = error
 	)
+
+	pred_fn = theano.function(
+		inputs = [x],
+		outputs = prob_final
+	)
 	print("Time compiling error function: {:.4f}".format(time.time() - t0))
 
-	return train_model, error, data_pack
+	return train_model, error, pred_fn, data_pack
 
-def train(train_model, error,data_pack, lr, mb, nepochs, **kwargs):
+def train(train_model, error,pred_fn, data_pack, lr, mb, nepochs, **kwargs):
 
 	test_rate = kwargs.get('test_rate', 10)
-
+	test_amount = 200
 	print("Starting to train the model...")
 
 	train_batches = int(data_pack['train'][1].get_value().shape[0] // mb)
@@ -112,10 +108,12 @@ def train(train_model, error,data_pack, lr, mb, nepochs, **kwargs):
 			if (i % test_rate == 0):
 				print("Last evaluation time: {:.4f}".format(eval_time))
 				print("Current cost: {}".format(accum_cost / float(test_rate)))
+
 				accum_cost = 0
-				cur_err_test = error(test_in[:,:1000,:],test_obs[:1000])
+
+				cur_err_test = error(test_in[:,:test_amount,:],test_obs[:test_amount])
 				print("Current test error: {}".format(cur_err_test))
-				cur_err_train = error(train_in[:,:1000,:], train_obs[:1000])
+				cur_err_train = error(train_in[:,:test_amount,:], train_obs[:test_amount])
 				print("Current train error: {}".format(cur_err_train))
 
 
@@ -124,5 +122,5 @@ if __name__ == '__main__':
 	x = T.tensor3('x')
 	y = T.lvector('y')
 	# data_pack = MNIST_processor("./data/mnist.pkl.gz")
-	train_model, error, data_pack = create_train_comp_graph(x,y)
-	train(train_model, error, data_pack, 0.0001, 50, 1000, test_rate=250)
+	train_model, error, pred_fn, data_pack = create_train_comp_graph(x,y)
+	train(train_model, error, pred_fn, data_pack, 0.001, 10, 1000, test_rate=100)

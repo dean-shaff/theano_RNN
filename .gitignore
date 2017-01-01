@@ -2,3 +2,4 @@
 *.hdf5
 *.gz
 data/mnist.pkl.gz
+lstm_example.py
