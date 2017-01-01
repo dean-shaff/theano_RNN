@@ -109,8 +109,9 @@ class SGD(object):
 
 		train_batches = self.ds.get_train_batches(mb)
 		logging.info("Starting training. There are {} iterations per epoch.".format(train_batches))
+		best_cost = 100. 
+
 		for epoch in xrange(nepochs):
-			best_cost = 100. 
 			logging.info("Current epoch {}".format(epoch))
 			for i in xrange(train_batches):
 				t0 = time.time()
