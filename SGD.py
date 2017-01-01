@@ -8,8 +8,9 @@ import theano.tensor as T
 
 cur_time = time.strftime("%d-%m-%y:%H:%M")
 
-# logging.basicConfig(filename='./logs/SGD{}.log'.format(cur_time), format='%(levelname)s:%(message)s', level=logging.DEBUG)
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+logging.basicConfig(filename='./logs/SGD{}.log'.format(cur_time), format='%(levelname)s:%(message)s', level=logging.DEBUG)
+logging.getLogger().addHandler(logging.StreamHandler())
+# logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 class SGD(object):
 	"""

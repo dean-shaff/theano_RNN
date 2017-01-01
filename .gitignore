@@ -3,3 +3,4 @@
 *.gz
 data/mnist.pkl.gz
 lstm_example.py
+*.log
