@@ -132,7 +132,7 @@ if __name__ == '__main__':
 
 	trainer.compile_functions(x,y)
 
-	trainer.train(0.01, 10,1000)	
+	trainer.train(0.01,10,1000)	
 
 	# data_pack = MNIST_processor("./data/mnist.pkl.gz")
 	# train_model, error, pred_fn, data_pack = create_train_comp_graph(x,y)

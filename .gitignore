@@ -3,4 +3,6 @@
 *.gz
 data/mnist.pkl.gz
 lstm_example.py
+parallel_recurrent_step.*
+LSTM_new.py
 *.log

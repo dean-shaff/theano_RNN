@@ -36,8 +36,7 @@ class SGD(object):
 		lr = T.scalar('lr')
 		momentum = T.scalar('momentum')
 		index = T.scalar('index', dtype='int64')
-
-		if (len(self.ds.test_obs.data.get_value().shape) == 2):
+		if (len(self.ds.test_obs.data.get_value().shape) == 1):
 			logging.info("Performing classification task.")
 			cost = self.model.log_cost_classify(y)
 			error = self.model.error_classify(y)
@@ -89,7 +88,7 @@ class SGD(object):
 			- mb: (int) the minibatch size
 			- nepochs: (int) The number of epochs for which to run the trainer.
 		kwargs:
-			- test_rate: (int) after how many minibatches to test the model?
+			- test_rate: (int) after how many minibatches to test the model? If -1 does not test
 			- save_rate: (int) How frequently to save model parameters? If -1 does automatically.
 		"""
 
@@ -99,7 +98,7 @@ class SGD(object):
 			logging.error("You need to call compile_functions before calling this function.")
 			return 
 
-		test_rate = kwargs.get('test_rate',50)
+		test_rate = kwargs.get('test_rate',-1)
 		save_rate = kwargs.get('save_rate',-1)
 
 		test_amount = 1000
@@ -113,16 +112,22 @@ class SGD(object):
 
 		for epoch in xrange(nepochs):
 			logging.info("Current epoch {}".format(epoch))
+			accum_cost = 0 
 			for i in xrange(train_batches):
 				t0 = time.time()
 				cur_cost = self.train_fn(i, lr, mb)
+				accum_cost += cur_cost
 				eval_time = time.time() - t0
-				if (cur_cost < best_cost):
-					best_cost = cur_cost
-					logging.info("Current cost: {}".format(best_cost))
+				if (best_cost - (accum_cost / float(i)) > 0.005):
+					best_cost = accum_cost / float(i)
+					logging.info("Current mean cost: {}".format(best_cost))
+					logging.info("Current instantaneous cost: {}".format(cur_cost))
 					logging.info("Time calculating cost: {:.4f}".format(time.time()- t0))
+					cur_time = time.strftime("%H:%M")
+					self.model.save_params("./checkpoints/LSTM_{}_{:.3f}.hdf5".format(cur_time, best_cost))
 
-				if (i % test_rate == 0):
+
+				if (i % test_rate == 0 and test_rate != -1):
 					cur_err_test = self.error_fn(test_in, test_obs)
 					# cur_err_test = error(test_in[:,:test_amount,:],test_obs[:test_amount])
 					print("Current test error: {}\n".format(cur_err_test))

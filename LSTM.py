@@ -4,6 +4,7 @@ import pdb
 import numpy as np 
 import theano 
 import theano.tensor as T 
+import h5py
 
 class LSTMLayer(object):
 
@@ -18,16 +19,19 @@ class LSTMLayer(object):
         """
         uni = np.random.uniform
 
-        def diag_constructor(limit,size):
+        def diag_constructor(limit,size,n):
             """
             args:
                 - limit: A list whose two elements correspond to the limit for the numpy uniform function.
                 - size: (Int) one dimension of the square matrix.
+                - n: The number of these matrices to create.
             """
-            diag_val = uni(limit[0], limit[1],size)
+
             diag_ind = np.diag_indices(size)
-            mat = np.zeros((size,size))
-            mat[diag_ind] = diag_val
+            mat = np.zeros((n,size,size))
+            for i in xrange(n):
+                diag_val = uni(limit[0], limit[1],size)
+                mat[i,diag_ind] = diag_val
             return mat.astype(theano.config.floatX)          
 
 
@@ -40,37 +44,51 @@ class LSTMLayer(object):
         self.nout = nout 
         self.nhid = nhid 
         # print("hidden dim", nhid)
+        # I can cast weight matrices differently. Instead of creating separate weight matrices for each connection, I create them 
+        # based on their size. This cleans up the code and potentially makes things more efficient. I will say that it makes 
+        # the recurrent step function harder to read.
+        self.Wi = theano.shared(uni(-np.sqrt(1.0/(nin*nhid)), np.sqrt(1.0/(nin*nhid)),(4, nin, nhid)).astype(theano.config.floatX),name='Wi')
+        self.Wh = theano.shared(uni(-np.sqrt(1.0/(nhid**2)), np.sqrt(1.0/(nhid**2)),(4, nhid, nhid)).astype(theano.config.floatX),name='Wh')
+        self.Wc = theano.shared(diag_constructor([-np.sqrt(1.0/(nhid**2)), np.sqrt(1.0/(nhid**2))],nhid,3),name='Wc')
+        self.b = theano.shared(np.zeros((4,nhid)), name='b')
 
-        # Input
-        self.WiL = theano.shared(uni(-np.sqrt(1.0/(nin)), np.sqrt(1.0/(nin)),(nin, nhid)).astype(theano.config.floatX),name='WiL')
-        self.WhL = theano.shared(uni(-np.sqrt(1.0/(nhid)), np.sqrt(1.0/(nhid)),(nhid, nhid)).astype(theano.config.floatX),name='WhL')
-        self.WcL = theano.shared(diag_constructor([-np.sqrt(1.0/(nhid)), np.sqrt(1.0/(nhid))],nhid),name='WcL')
-        self.bL = theano.shared(np.zeros(nhid),name='bL')
-        # Forget
-        self.WiPhi = theano.shared(uni(-np.sqrt(1.0/(nin)), np.sqrt(1.0/(nin)),(nin, nhid)).astype(theano.config.floatX),name='WiPhi')
-        self.WhPhi = theano.shared(uni(-np.sqrt(1.0/(nhid)), np.sqrt(1.0/(nhid)),(nhid, nhid)).astype(theano.config.floatX),name='WhPhi')
-        self.WcPhi = theano.shared(diag_constructor([-np.sqrt(1.0/(nhid)), np.sqrt(1.0/(nhid))],nhid),name='WcL')
-        self.bPhi = theano.shared(np.zeros(nhid),name='bPhi')
-        # Cells
-        self.WiCell = theano.shared(uni(-np.sqrt(1.0/(nin)), np.sqrt(1.0/(nin)),(nin, nhid)).astype(theano.config.floatX),name='WiCell')
-        self.WhCell = theano.shared(uni(-np.sqrt(1.0/(nhid)), np.sqrt(1.0/(nhid)),(nhid, nhid)).astype(theano.config.floatX),name='WhCell')
-        self.bCell = theano.shared(np.zeros(nhid),name='bCell')
-        # Output
-        self.WiOm = theano.shared(uni(-np.sqrt(1.0/(nin)), np.sqrt(1.0/(nin)),(nin, nhid)).astype(theano.config.floatX),name='WiOm')
-        self.WhOm = theano.shared(uni(-np.sqrt(1.0/(nhid)), np.sqrt(1.0/(nhid)),(nhid, nhid)).astype(theano.config.floatX),name='WhOm')
-        self.WcOm = theano.shared(diag_constructor([-np.sqrt(1.0/(nhid)), np.sqrt(1.0/(nhid))],nhid),name='WcL')
-        self.bOm = theano.shared(np.zeros(nhid),name='bOm')
-        # Sequence output 
-        self.Wy = theano.shared(uni(-np.sqrt(1.0/(nhid)), np.sqrt(1.0/(nhid)),(nhid,nout)).astype(theano.config.floatX),name='Wy')
+        self.Wy = theano.shared(uni(-np.sqrt(1.0/(nhid*nout)), np.sqrt(1.0/(nhid*nout)),(nhid,nout)).astype(theano.config.floatX),name='Wy')
         self.by = theano.shared(np.zeros(nout), name='by')
 
-        self.params = [
-                        self.WiL, self.WhL, self.WcL,self.bL,
-                        self.WiPhi, self.WhPhi, self.WcPhi,self.bPhi,
-                        self.WiCell, self.WhCell,self.bCell,
-                        self.WiOm, self.WhOm, self.WcOm,self.bOm,
-                        self.Wy, self.by
-                    ]
+        self.params = [self.Wi, self.Wh, self.Wc, self.b, self.Wy, self.by]
+
+        # # Input
+        # self.WiL = theano.shared(uni(-np.sqrt(1.0/(nin)), np.sqrt(1.0/(nin)),(nin, nhid)).astype(theano.config.floatX),name='WiL')
+        # self.WhL = theano.shared(uni(-np.sqrt(1.0/(nhid)), np.sqrt(1.0/(nhid)),(nhid, nhid)).astype(theano.config.floatX),name='WhL')
+        # self.WcL = theano.shared(diag_constructor([-np.sqrt(1.0/(nhid)), np.sqrt(1.0/(nhid))],nhid),name='WcL')
+        # self.bL = theano.shared(np.zeros(nhid),name='bL')
+        # # Forget
+        # self.WiPhi = theano.shared(uni(-np.sqrt(1.0/(nin)), np.sqrt(1.0/(nin)),(nin, nhid)).astype(theano.config.floatX),name='WiPhi')
+        # self.WhPhi = theano.shared(uni(-np.sqrt(1.0/(nhid)), np.sqrt(1.0/(nhid)),(nhid, nhid)).astype(theano.config.floatX),name='WhPhi')
+        # self.WcPhi = theano.shared(diag_constructor([-np.sqrt(1.0/(nhid)), np.sqrt(1.0/(nhid))],nhid),name='WcL')
+        # self.bPhi = theano.shared(np.zeros(nhid),name='bPhi')
+        # # Cells
+        # self.WiCell = theano.shared(uni(-np.sqrt(1.0/(nin)), np.sqrt(1.0/(nin)),(nin, nhid)).astype(theano.config.floatX),name='WiCell')
+        # self.WhCell = theano.shared(uni(-np.sqrt(1.0/(nhid)), np.sqrt(1.0/(nhid)),(nhid, nhid)).astype(theano.config.floatX),name='WhCell')
+        # self.bCell = theano.shared(np.zeros(nhid),name='bCell')
+        # # Output
+        # self.WiOm = theano.shared(uni(-np.sqrt(1.0/(nin)), np.sqrt(1.0/(nin)),(nin, nhid)).astype(theano.config.floatX),name='WiOm')
+        # self.WhOm = theano.shared(uni(-np.sqrt(1.0/(nhid)), np.sqrt(1.0/(nhid)),(nhid, nhid)).astype(theano.config.floatX),name='WhOm')
+        # self.WcOm = theano.shared(diag_constructor([-np.sqrt(1.0/(nhid)), np.sqrt(1.0/(nhid))],nhid),name='WcL')
+        # self.bOm = theano.shared(np.zeros(nhid),name='bOm')
+        # # Sequence output 
+        # self.Wy = theano.shared(uni(-np.sqrt(1.0/(nhid)), np.sqrt(1.0/(nhid)),(nhid,nout)).astype(theano.config.floatX),name='Wy')
+        # self.by = theano.shared(np.zeros(nout), name='by')
+
+        # self.params = [
+        #                 self.WiL, self.WhL, self.WcL,self.bL,
+        #                 self.WiPhi, self.WhPhi, self.WcPhi,self.bPhi,
+        #                 self.WiCell, self.WhCell,self.bCell,
+        #                 self.WiOm, self.WhOm, self.WcOm,self.bOm,
+        #                 self.Wy, self.by
+        #             ]
+
+
         def recurrent_step(x_t,b_tm1,s_tm1):
             """
             Define the recurrent step.
@@ -79,15 +97,28 @@ class LSTMLayer(object):
                 - b_tm1: the previous b_t (b_{t minus 1})
                 - s_tml: the previous s_t (s_{t minus 1}) this is the state of the cell
             """
+            # # Input 
+            # b_L = T.nnet.sigmoid(T.dot(x_t, self.WiL) + T.dot(b_tm1,self.WhL) + T.dot(s_tm1, self.WcL) + self.bL)
+            # # Forget
+            # b_Phi = T.nnet.sigmoid(T.dot(x_t,self.WiPhi) + T.dot(b_tm1,self.WhPhi) + T.dot(s_tm1, self.WcPhi) + self.bPhi)
+            # # Cell 
+            # a_Cell = T.dot(x_t, self.WiCell) + T.dot(b_tm1, self.WhCell) + self.bCell
+            # s_t = b_Phi * s_tm1 + b_L*T.tanh(a_Cell)
+            # # Output 
+            # b_Om = T.nnet.sigmoid(T.dot(x_t, self.WiOm) + T.dot(b_tm1,self.WhOm) + T.dot(s_t, self.WcOm) + self.bOm)
+            # # Final output (What gets sent to the next step in the recurrence) 
+            # b_Cell = b_Om*T.tanh(s_t)
+            # # Sequence output
+            # o_t = T.nnet.softmax(T.dot(b_Cell, self.Wy) + self.by)
             # Input 
-            b_L = T.nnet.sigmoid(T.dot(x_t, self.WiL) + T.dot(b_tm1,self.WhL) + T.dot(s_tm1, self.WcL) + self.bL)
+            b_L = T.nnet.sigmoid(T.dot(x_t, self.Wi[0]) + T.dot(b_tm1,self.Wh[0]) + T.dot(s_tm1, self.Wc[0]) + self.b[0])
             # Forget
-            b_Phi = T.nnet.sigmoid(T.dot(x_t,self.WiPhi) + T.dot(b_tm1,self.WhPhi) + T.dot(s_tm1, self.WcPhi) + self.bPhi)
+            b_Phi = T.nnet.sigmoid(T.dot(x_t,self.Wi[1]) + T.dot(b_tm1,self.Wh[1]) + T.dot(s_tm1, self.Wc[1]) + self.b[1])
             # Cell 
-            a_Cell = T.dot(x_t, self.WiCell) + T.dot(b_tm1, self.WhCell) + self.bCell
+            a_Cell = T.dot(x_t, self.Wi[2]) + T.dot(b_tm1, self.Wh[2]) + self.b[2]
             s_t = b_Phi * s_tm1 + b_L*T.tanh(a_Cell)
             # Output 
-            b_Om = T.nnet.sigmoid(T.dot(x_t, self.WiOm) + T.dot(b_tm1,self.WhOm) + T.dot(s_t, self.WcOm) + self.bOm)
+            b_Om = T.nnet.sigmoid(T.dot(x_t, self.Wi[3]) + T.dot(b_tm1,self.Wh[3]) + T.dot(s_t, self.Wc[2]) + self.b[3])
             # Final output (What gets sent to the next step in the recurrence) 
             b_Cell = b_Om*T.tanh(s_t)
             # Sequence output
@@ -107,6 +138,37 @@ class LSTMLayer(object):
 
         self.b_out = out[0]
         self.pred = out[2]
+
+    def save_params(self,filename,**kwargs):
+        """
+        Save current model parameters to a specified filename.
+        args:
+            - filename (str): The name of the hdf5 file in which to save the model parameters.
+        kwargs:
+            - any training parameters we want to save. 
+        """
+        print("Saving model parameters.")
+        t0 = time.time()
+        f = h5py.File(filename,'w')
+        for param in self.params:
+            f.create_dataset(param.name, data=param.get_value())
+        print("Saving complete. Time spent: {:.3f}".format(time.time() - t0))
+        f.close()
+
+    def load_params(self, filename):
+        """
+        Load in some model parameters from a file. 
+        args:
+            - filename (str): The name of the hdf5 file containing the model parameters.
+        """
+        print("Loading in model parameters")
+        t0 = time.time() 
+        f = h5py.File(filename,'r')
+        for param in self.params:
+            param_val = f[param.name][...]
+            param.set_value(param_val)
+        print("Loading complete. Time spent: {:.3f}".format(time.time() - t0))
+
 
     def neg_log_likelihood(self, x,y):
 
@@ -149,9 +211,15 @@ class LSTMLayer(object):
 if __name__ == "__main__":
     x = T.tensor3('x')
     lstm = LSTMLayer(x,{'in_dim':100,'hid_dim':100,'out_dim':20})
+    # lstm.save_params("testsave.hdf5")
+    # lstm.load_params("testsave.hdf5")
     t0 = time.time()
     f = theano.function([x],lstm.pred)
     print("Took {:.4f} seconds to compile".format(time.time() - t0))
     x0 = np.random.randn(150,50,100) #sequence length,  batch size, character length (input length)
-    res = f(x0)
-    pdb.set_trace()
+    for i in xrange(10):
+        t0 = time.time()
+        res = f(x0)
+        print("{:.4f} in calculation".format(time.time() - t0))
+
+    # pdb.set_trace()
