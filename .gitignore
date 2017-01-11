@@ -5,5 +5,6 @@ data/mnist.pkl.gz
 lstm_example.py
 parallel_recurrent_step.*
 LSTM_new.py
+LSTM_deprecated.py
 *.log
 .ipynb_checkpoints/*
