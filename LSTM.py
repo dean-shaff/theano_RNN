@@ -79,22 +79,42 @@ class LSTMLayer(object):
             # Sequence output
             o_t = T.nnet.softmax(T.dot(b_Cell, self.Wy) + self.by)
 
-            return b_Cell, s_t, o_t 
+            return o_t, b_Cell, s_t 
+        
+        self.recurrent_step = recurrent_step
 
-        out, _ = theano.scan(recurrent_step,
+        out, _ = theano.scan(self.recurrent_step,
                                 truncate_gradient=truncate,
                                 sequences = X,
                                 outputs_info=[
+                                                {'initial':None},
                                                 {'initial':T.zeros((X.shape[1],nhid))},
-                                                {'initial':T.zeros((X.shape[1],nhid))},
-                                                {'initial':None}
+                                                {'initial':T.zeros((X.shape[1],nhid))}
                                             ],
                                 n_steps=X.shape[0])
 
 
 
-        self.b_out = out[0]
-        self.pred = out[2]
+        self.b_out = out[1]
+        self.pred = out[0]
+
+    def sequence_sampling(self,seed,n_steps):
+        """
+        Define the outputs for LSTM that feeds back into itself. Basically the same thing as in __init__
+        but we feed output back in as input.
+        """
+
+        out, _ = theano.scan(self.recurrent_step,
+                                outputs_info=[
+                                                {'initial':seed},                                                
+                                                {'initial':T.zeros((1,self.nhid))},
+                                                {'initial':T.zeros((1,self.nhid))}
+                                            ],
+                                n_steps=n_steps)
+
+        seq_pred = out[0]
+        return seq_pred
+
 
     def save_params(self,filename,**kwargs):
         """

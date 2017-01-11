@@ -18,6 +18,9 @@ class SGD(object):
 	"""
 	def __init__(self, model, dataset):
 		"""
+		args:
+			- model: An instance of LSTMLayer
+			- dataset: An instance of a Dataset 
 		"""
 		self.model = model
 		self.ds = dataset 
