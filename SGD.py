@@ -191,6 +191,8 @@ class SGD(object):
 				accum_cost += cur_cost
 				accum_count += 1.
 				eval_time = time.time() - t0
+				self.SGDlogger.info("Iteration: {}. Current instantaneous cost: {}".format(i, cur_cost))
+
 				# test to see if we're making improvement.
 				if (best_cost - accum_cost/accum_count > 0.005):
 					best_cost = accum_cost/accum_count
