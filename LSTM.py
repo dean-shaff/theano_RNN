@@ -108,7 +108,80 @@ class LSTMMultiLayer(object):
 
 		# self.b_out = out[1]
 		self.pred = out[0]
- 
+
+	def save_params(self,filename,**kwargs):
+		"""
+		Save current model parameters to a specified filename.
+		args:
+			- filename (str): The name of the hdf5 file in which to save the model parameters.
+		kwargs:
+			- any training parameters we want to save. 
+		"""
+		self.logger.info("Saving model parameters.")
+		t0 = time.time()
+		f = h5py.File(filename,'w')
+		for i,layer in enumerate(self.layers):
+			grp = f.create_group('l{}'.format(i))
+			for param in layer.params:
+				grp.create_dataset(param.name, data=param.get_value())
+		f.create_dataset('Wy', data=self.Wy.get_value())
+		f.create_dataset('by', data=self.by.get_value())
+		self.logger.info("Saving complete. Time spent: {:.3f}\n".format(time.time() - t0))
+		f.close()
+
+	def load_params(self, filename):
+		"""
+		Load in some model parameters from a file. 
+		args:
+			- filename (str): The name of the hdf5 file containing the model parameters.
+		"""
+		self.logger.info("Loading in model parameters")
+		t0 = time.time() 
+		f = h5py.File(filename,'r')
+		for i, layer in enumerate(self.layers):
+			grp = f['/l{}'.format(i)]
+			for param in layer.params:
+				param_val = grp[param.name][...]
+				param.set_value(param_val)
+		self.Wy.set_value(f['Wy'][...])
+		self.by.set_value(f['by'][...])
+		self.logger.info("Loading complete. Time spent: {:.3f}\n".format(time.time() - t0))
+
+	def neg_log_likelihood(self, x,y):
+
+		# y_arg_max = T.argmax(y, axis=1)
+		return -T.mean(T.log(x)[T.arange(y.shape[0]),y])
+
+	def log_cost_sequence(self, y):
+
+		log_like, _ = theano.scan(self.neg_log_likelihood, 
+								sequences=[self.pred,T.argmax(y,axis=2)])
+
+		return T.mean(log_like)
+
+	def error(self, x,y):
+		"""
+		The generic function -- calculates error between two 2d tensors. 
+		"""
+		return T.mean(T.neq(T.argmax(x, axis=1),T.argmax(y, axis=1)))
+
+	def error_sequence(self,y):
+
+		# err, _ = theano.scan(self.error, 
+		#                     sequences = [self.pred,y])        
+
+		err = T.mean(T.neq(T.argmax(self.pred, axis=2), T.argmax(y, axis=2)))
+
+		return err
+
+
+	def log_cost_classify(self,y):
+
+		return self.neg_log_likelihood(self.pred[-1],y)
+
+	def error_classify(self,y):
+
+		return T.mean(T.neq(T.argmax(self.pred[-1],axis=1), y)) 
 
 
 class LSTMLayer(object):
@@ -310,7 +383,8 @@ if __name__ == "__main__":
 	lstm = LSTMMultiLayer(x,[
 							{'in_dim':50,'hid_dim':100,'out_dim':20},
 							{'in_dim':100,'hid_dim':100,'out_dim':20}])
-
+	lstm.save_params('./checkpoints/testsave_multilayer.hdf5')
+	lstm.load_params('./checkpoints/testsave_multilayer.hdf5')
 	t0 = time.time()
 	f = theano.function([x], lstm.pred)
 	print("Took {:.4f} seconds to compile".format(time.time() - t0))
