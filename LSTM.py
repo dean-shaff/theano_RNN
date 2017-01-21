@@ -8,6 +8,109 @@ import h5py
 
 from util import logging_config 
 
+class LSTMMultiLayer(object):
+
+	def __init__(self,X,dims,**kwargs):
+		"""
+		Create the computational graph for a multilayer LSTM.
+		args:
+			- X (theano.tensor.tensor): The symblic input to the computational graph
+			- dim (list): A list of dictionaries containing the dimensions of each unit in the LSTM. 
+				This gets passed to LSTMLayer
+		kwargs:
+			- logfile (str): The logfile to be used for file logging (None).
+			- bptt_truncate (int): The number of steps after which to stop propagating gradients (-1).
+		"""
+		logfile = kwargs.get('logfile',None)
+		truncate = kwargs.get("bptt_truncate", -1)
+
+		self.logger = logging_config("LSTM_multilayer",logfile=logfile)
+
+		uni = np.random.uniform
+
+		self.layers = []
+		self.params = []
+
+		for d in dims:
+			li = LSTMLayer(X,d,logfile=logfile,weights_only=True)
+			self.layers.append(li)
+			self.params += li.params
+
+		nhid_final = dims[-1].get('hid_dim')
+		nout_final = dims[-1].get('out_dim')
+		self.Wy = theano.shared(uni(-np.sqrt(1.0/(nhid_final*nout_final)), np.sqrt(1.0/(nhid_final*nout_final)),(nhid_final,nout_final)).astype(theano.config.floatX),name='Wy')
+		self.by = theano.shared(np.zeros(nout_final), name='by')
+		self.params += [self.Wy, self.by]
+
+		def recurrent_step(x_t,*args): #b_tm1,s_tm1):
+			"""
+			Define the recurrent step for the multilayer network.
+			args:
+				- x_t: the current sequence
+				- b_tm1: the previous b_t (b_{t minus 1})
+				- s_tml: the previous s_t (s_{t minus 1}) this is the state of the cell
+			"""
+			b_tm1, s_tm1 = args[0], args[1]
+			outputs = []
+
+			l0 = self.layers[0]
+			# Input 
+			b_L = T.nnet.sigmoid(T.dot(x_t, l0.Wi[0]) + T.dot(b_tm1,l0.Wh[0]) + T.dot(s_tm1, l0.Wc[0]) + l0.b[0])
+			# Forget
+			b_Phi = T.nnet.sigmoid(T.dot(x_t,l0.Wi[1]) + T.dot(b_tm1,l0.Wh[1]) + T.dot(s_tm1, l0.Wc[1]) + l0.b[1])
+			# Cell 
+			a_Cell = T.dot(x_t, l0.Wi[2]) + T.dot(b_tm1, l0.Wh[2]) + l0.b[2]
+			s_t = b_Phi * s_tm1 + b_L*T.tanh(a_Cell)
+			# Output 
+			b_Om = T.nnet.sigmoid(T.dot(x_t, l0.Wi[3]) + T.dot(b_tm1,l0.Wh[3]) + T.dot(s_t, l0.Wc[2]) + l0.b[3])
+			# Final output (What gets sent to the next step in the recurrence) 
+			b_Cell = b_Om*T.tanh(s_t)
+
+			outputs.append(b_Cell)
+			outputs.append(s_t)
+
+			for i in xrange(1, len(self.layers)):
+				li = self.layers[i]
+				b_tm1, s_tm1 = args[2*i], args[(2*i)+1]
+				# Input 
+				b_L = T.nnet.sigmoid(T.dot(b_Cell, li.Wi[0]) + T.dot(b_tm1,li.Wh[0]) + T.dot(s_tm1, li.Wc[0]) + li.b[0])
+				# Forget
+				b_Phi = T.nnet.sigmoid(T.dot(b_Cell,li.Wi[1]) + T.dot(b_tm1,li.Wh[1]) + T.dot(s_tm1, li.Wc[1]) + li.b[1])
+				# Cell 
+				a_Cell = T.dot(b_Cell, li.Wi[2]) + T.dot(b_tm1, li.Wh[2]) + li.b[2]
+				s_t = b_Phi * s_tm1 + b_L*T.tanh(a_Cell)
+				# Output 
+				b_Om = T.nnet.sigmoid(T.dot(b_Cell, li.Wi[3]) + T.dot(b_tm1,li.Wh[3]) + T.dot(s_t, li.Wc[2]) + li.b[3])
+				# Final output (What gets sent to the next step in the recurrence) 
+				b_Cell = b_Om*T.tanh(s_t)
+				outputs.append(b_Cell)
+				outputs.append(s_t)
+
+			# Sequence output
+			o_t = T.nnet.softmax(T.dot(outputs[-2], self.Wy) + self.by)
+			
+			return_vals = [o_t] + outputs
+
+			return return_vals
+
+		self.recurrent_step = recurrent_step
+
+		outputs_info = [{'initial':None}]
+		for i in xrange(len(dims)):
+			outputs_info.append({'initial':T.zeros((X.shape[1],dims[i]['hid_dim']))})
+			outputs_info.append({'initial':T.zeros((X.shape[1],dims[i]['hid_dim']))})
+
+		out, _ = theano.scan(self.recurrent_step,
+									truncate_gradient=truncate,
+									sequences=X,
+									outputs_info=outputs_info,
+									n_steps=X.shape[0])
+
+		# self.b_out = out[1]
+		self.pred = out[0]
+ 
+
+
 class LSTMLayer(object):
 
 	def __init__(self,X,dim,**kwargs):
@@ -15,12 +118,16 @@ class LSTMLayer(object):
 		Set up the weight matrices for a long short term memory (LSTM) unit. 
 		I use the notation from Graves. 
 		args:
+			- X (theano.tensor.tensor): The symblic input to the computational graph
 			- dim: A dictionary containing the dimensions of the units inside the LSTM.  
 		kwargs:
-			- logfile (str): the logfile to be used for logging.
+			- logfile (str): the logfile to be used for logging (None)
+			- weights_only (bool): Whether or not to just setup weights.
 		"""
 		logfile = kwargs.get('logfile',None)
-		self.logger = logging_config('LSTM_setup',logfile=logfile)
+		weights_only = kwargs.get('weights_only',False)
+
+		self.logger = logging_config('LSTM_layer',logfile=logfile)
 
 		uni = np.random.uniform
 
@@ -55,53 +162,60 @@ class LSTMLayer(object):
 		self.Wh = theano.shared(uni(-np.sqrt(1.0/(nhid**2)), np.sqrt(1.0/(nhid**2)),(4, nhid, nhid)).astype(theano.config.floatX),name='Wh')
 		self.Wc = theano.shared(diag_constructor([-np.sqrt(1.0/(nhid**2)), np.sqrt(1.0/(nhid**2))],nhid,3),name='Wc')
 		self.b = theano.shared(np.zeros((4,nhid)), name='b')
-
-		self.Wy = theano.shared(uni(-np.sqrt(1.0/(nhid*nout)), np.sqrt(1.0/(nhid*nout)),(nhid,nout)).astype(theano.config.floatX),name='Wy')
-		self.by = theano.shared(np.zeros(nout), name='by')
-
-		self.params = [self.Wi, self.Wh, self.Wc, self.b, self.Wy, self.by]
-
-
-		def recurrent_step(x_t,b_tm1,s_tm1):
-			"""
-			Define the recurrent step.
-			args:
-				- x_t: the current sequence
-				- b_tm1: the previous b_t (b_{t minus 1})
-				- s_tml: the previous s_t (s_{t minus 1}) this is the state of the cell
-			"""
-			# Input 
-			b_L = T.nnet.sigmoid(T.dot(x_t, self.Wi[0]) + T.dot(b_tm1,self.Wh[0]) + T.dot(s_tm1, self.Wc[0]) + self.b[0])
-			# Forget
-			b_Phi = T.nnet.sigmoid(T.dot(x_t,self.Wi[1]) + T.dot(b_tm1,self.Wh[1]) + T.dot(s_tm1, self.Wc[1]) + self.b[1])
-			# Cell 
-			a_Cell = T.dot(x_t, self.Wi[2]) + T.dot(b_tm1, self.Wh[2]) + self.b[2]
-			s_t = b_Phi * s_tm1 + b_L*T.tanh(a_Cell)
-			# Output 
-			b_Om = T.nnet.sigmoid(T.dot(x_t, self.Wi[3]) + T.dot(b_tm1,self.Wh[3]) + T.dot(s_t, self.Wc[2]) + self.b[3])
-			# Final output (What gets sent to the next step in the recurrence) 
-			b_Cell = b_Om*T.tanh(s_t)
-			# Sequence output
-			o_t = T.nnet.softmax(T.dot(b_Cell, self.Wy) + self.by)
-
-			return o_t, b_Cell, s_t 
 		
-		self.recurrent_step = recurrent_step
+		if weights_only:
 
-		out, _ = theano.scan(self.recurrent_step,
-								truncate_gradient=truncate,
-								sequences = X,
-								outputs_info=[
-												{'initial':None},
-												{'initial':T.zeros((X.shape[1],nhid))},
-												{'initial':T.zeros((X.shape[1],nhid))}
-											],
-								n_steps=X.shape[0])
+			self.params = [self.Wi, self.Wh, self.Wc, self.b]
 
+		if not weights_only:
+
+			self.Wy = theano.shared(uni(-np.sqrt(1.0/(nhid*nout)), np.sqrt(1.0/(nhid*nout)),(nhid,nout)).astype(theano.config.floatX),name='Wy')
+			self.by = theano.shared(np.zeros(nout), name='by')
+
+			self.params = [self.Wi, self.Wh, self.Wc, self.b, self.Wy, self.by]
 
 
-		self.b_out = out[1]
-		self.pred = out[0]
+			def recurrent_step(x_t,b_tm1,s_tm1):
+				"""
+				Define the recurrent step.
+				args:
+					- x_t: the current sequence
+					- b_tm1: the previous b_t (b_{t minus 1})
+					- s_tml: the previous s_t (s_{t minus 1}) this is the state of the cell
+				"""
+				# Input 
+				b_L = T.nnet.sigmoid(T.dot(x_t, self.Wi[0]) + T.dot(b_tm1,self.Wh[0]) + T.dot(s_tm1, self.Wc[0]) + self.b[0])
+				# Forget
+				b_Phi = T.nnet.sigmoid(T.dot(x_t,self.Wi[1]) + T.dot(b_tm1,self.Wh[1]) + T.dot(s_tm1, self.Wc[1]) + self.b[1])
+				# Cell 
+				a_Cell = T.dot(x_t, self.Wi[2]) + T.dot(b_tm1, self.Wh[2]) + self.b[2]
+				s_t = b_Phi * s_tm1 + b_L*T.tanh(a_Cell)
+				# Output 
+				b_Om = T.nnet.sigmoid(T.dot(x_t, self.Wi[3]) + T.dot(b_tm1,self.Wh[3]) + T.dot(s_t, self.Wc[2]) + self.b[3])
+				# Final output (What gets sent to the next step in the recurrence) 
+				b_Cell = b_Om*T.tanh(s_t)
+				# Sequence output
+				o_t = T.nnet.softmax(T.dot(b_Cell, self.Wy) + self.by)
+
+				return o_t, b_Cell, s_t 
+			
+
+			self.recurrent_step = recurrent_step
+
+			out, _ = theano.scan(self.recurrent_step,
+									truncate_gradient=truncate,
+									sequences = X,
+									outputs_info=[
+													{'initial':None},
+													{'initial':T.zeros((X.shape[1],nhid))},
+													{'initial':T.zeros((X.shape[1],nhid))}
+												],
+									n_steps=X.shape[0])
+
+
+
+			self.b_out = out[1]
+			self.pred = out[0]
 
 	def sequence_sampling(self,seed,n_steps):
 		"""
@@ -192,16 +306,31 @@ class LSTMLayer(object):
 
 if __name__ == "__main__":
 	x = T.tensor3('x')
-	lstm = LSTMLayer(x,{'in_dim':100,'hid_dim':100,'out_dim':20})
-	# lstm.save_params("testsave.hdf5")
-	# lstm.load_params("testsave.hdf5")
+
+	lstm = LSTMMultiLayer(x,[
+							{'in_dim':50,'hid_dim':100,'out_dim':20},
+							{'in_dim':100,'hid_dim':100,'out_dim':20}])
+
 	t0 = time.time()
-	f = theano.function([x],lstm.pred)
+	f = theano.function([x], lstm.pred)
 	print("Took {:.4f} seconds to compile".format(time.time() - t0))
-	x0 = np.random.randn(150,50,100) #sequence length,  batch size, character length (input length)
+	x0 = np.random.randn(150,75,50) #sequence length,  batch size, character length (input length)
 	for i in xrange(10):
 		t0 = time.time()
 		res = f(x0)
 		print("{:.4f} in calculation".format(time.time() - t0))
+
+	# build a basic layer
+	# lstm = LSTMLayer(x,{'in_dim':100,'hid_dim':100,'out_dim':20})
+	# lstm.save_params("testsave.hdf5")
+	# lstm.load_params("testsave.hdf5")
+	# t0 = time.time()
+	# f = theano.function([x],lstm.pred)
+	# print("Took {:.4f} seconds to compile".format(time.time() - t0))
+	# x0 = np.random.randn(150,50,100) #sequence length,  batch size, character length (input length)
+	# for i in xrange(10):
+	# 	t0 = time.time()
+	# 	res = f(x0)
+	# 	print("{:.4f} in calculation".format(time.time() - t0))
 
 	# pdb.set_trace()

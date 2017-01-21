@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
 	cur_time = time.strftime("%d-%m-%y:%H:%M")
 
-	logfile = './logs/LSTM_run{}'.format(cur_time)
+	logfile = './logs/LSTM_run{}.log'.format(cur_time)
 
 	x = T.tensor3('x')
 	y = T.tensor3('y')
