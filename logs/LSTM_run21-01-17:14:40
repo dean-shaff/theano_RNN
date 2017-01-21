@@ -1,0 +1,156 @@
+INFO - 2017-01-21 20:40:16,324 - LSTM_setup - Performing sequence classification task.
+INFO - 2017-01-21 20:40:16,324 - LSTM_setup - Performing sequence classification task.
+INFO - 2017-01-21 20:40:16,336 - LSTM_setup - Using rmsprop method
+INFO - 2017-01-21 20:40:16,336 - LSTM_setup - Using rmsprop method
+INFO - 2017-01-21 20:40:18,360 - LSTM_setup - Compiling theano functions...
+INFO - 2017-01-21 20:40:18,360 - LSTM_setup - Compiling theano functions...
+INFO - 2017-01-21 20:40:41,472 - LSTM_setup - Time compiling: 23.1124
+INFO - 2017-01-21 20:40:41,472 - LSTM_setup - Time compiling: 23.1124
+INFO - 2017-01-21 20:40:42,084 - LSTM_setup - 
+Starting training. There are 1634 iterations per epoch.
+INFO - 2017-01-21 20:40:42,084 - LSTM_setup - 
+Starting training. There are 1634 iterations per epoch.
+INFO - 2017-01-21 20:40:42,084 - LSTM_setup - 
+Current epoch: 0
+INFO - 2017-01-21 20:40:42,084 - LSTM_setup - 
+Current epoch: 0
+INFO - 2017-01-21 20:40:42,414 - LSTM_setup - Iteration: 1. Current mean cost: 4.06042432262
+INFO - 2017-01-21 20:40:42,414 - LSTM_setup - Iteration: 1. Current mean cost: 4.06042432262
+INFO - 2017-01-21 20:40:42,415 - LSTM_setup - Time calculating cost: 0.3305
+INFO - 2017-01-21 20:40:42,415 - LSTM_setup - Time calculating cost: 0.3305
+INFO - 2017-01-21 20:40:42,415 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:42,415 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:42,419 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:40:42,419 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:40:42,690 - LSTM_setup - Iteration: 2. Current mean cost: 4.04295054642
+INFO - 2017-01-21 20:40:42,690 - LSTM_setup - Iteration: 2. Current mean cost: 4.04295054642
+INFO - 2017-01-21 20:40:42,691 - LSTM_setup - Time calculating cost: 0.2716
+INFO - 2017-01-21 20:40:42,691 - LSTM_setup - Time calculating cost: 0.2716
+INFO - 2017-01-21 20:40:42,691 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:42,691 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:42,695 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:40:42,695 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:40:42,992 - LSTM_setup - Iteration: 3. Current mean cost: 4.03703883831
+INFO - 2017-01-21 20:40:42,992 - LSTM_setup - Iteration: 3. Current mean cost: 4.03703883831
+INFO - 2017-01-21 20:40:42,992 - LSTM_setup - Time calculating cost: 0.2966
+INFO - 2017-01-21 20:40:42,992 - LSTM_setup - Time calculating cost: 0.2966
+INFO - 2017-01-21 20:40:42,993 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:42,993 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:42,996 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:40:42,996 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:40:43,562 - LSTM_setup - Iteration: 5. Current mean cost: 4.03138798442
+INFO - 2017-01-21 20:40:43,562 - LSTM_setup - Iteration: 5. Current mean cost: 4.03138798442
+INFO - 2017-01-21 20:40:43,562 - LSTM_setup - Time calculating cost: 0.2671
+INFO - 2017-01-21 20:40:43,562 - LSTM_setup - Time calculating cost: 0.2671
+INFO - 2017-01-21 20:40:43,562 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:43,562 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:43,566 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:40:43,566 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:40:44,653 - LSTM_setup - Iteration: 9. Current mean cost: 4.02608615685
+INFO - 2017-01-21 20:40:44,653 - LSTM_setup - Iteration: 9. Current mean cost: 4.02608615685
+INFO - 2017-01-21 20:40:44,653 - LSTM_setup - Time calculating cost: 0.2518
+INFO - 2017-01-21 20:40:44,653 - LSTM_setup - Time calculating cost: 0.2518
+INFO - 2017-01-21 20:40:44,654 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:44,654 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:44,657 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:40:44,657 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:40:47,063 - LSTM_setup - Iteration: 16. Current mean cost: 4.02104548236
+INFO - 2017-01-21 20:40:47,063 - LSTM_setup - Iteration: 16. Current mean cost: 4.02104548236
+INFO - 2017-01-21 20:40:47,063 - LSTM_setup - Time calculating cost: 0.2715
+INFO - 2017-01-21 20:40:47,063 - LSTM_setup - Time calculating cost: 0.2715
+INFO - 2017-01-21 20:40:47,063 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:47,063 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:47,066 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:40:47,066 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:40:50,799 - LSTM_setup - Iteration: 27. Current mean cost: 4.01566090743
+INFO - 2017-01-21 20:40:50,799 - LSTM_setup - Iteration: 27. Current mean cost: 4.01566090743
+INFO - 2017-01-21 20:40:50,800 - LSTM_setup - Time calculating cost: 0.2743
+INFO - 2017-01-21 20:40:50,800 - LSTM_setup - Time calculating cost: 0.2743
+INFO - 2017-01-21 20:40:50,800 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:50,800 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:50,803 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:40:50,803 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:40:54,383 - LSTM_setup - Iteration: 38. Current mean cost: 4.01065619104
+INFO - 2017-01-21 20:40:54,383 - LSTM_setup - Iteration: 38. Current mean cost: 4.01065619104
+INFO - 2017-01-21 20:40:54,384 - LSTM_setup - Time calculating cost: 0.2969
+INFO - 2017-01-21 20:40:54,384 - LSTM_setup - Time calculating cost: 0.2969
+INFO - 2017-01-21 20:40:54,384 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:54,384 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:54,387 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:40:54,387 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:40:58,010 - LSTM_setup - Iteration: 49. Current mean cost: 4.00511742784
+INFO - 2017-01-21 20:40:58,010 - LSTM_setup - Iteration: 49. Current mean cost: 4.00511742784
+INFO - 2017-01-21 20:40:58,010 - LSTM_setup - Time calculating cost: 0.2987
+INFO - 2017-01-21 20:40:58,010 - LSTM_setup - Time calculating cost: 0.2987
+INFO - 2017-01-21 20:40:58,010 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:58,010 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:40:58,014 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:40:58,014 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:41:01,125 - LSTM_setup - Iteration: 58. Current mean cost: 4.00002725852
+INFO - 2017-01-21 20:41:01,125 - LSTM_setup - Iteration: 58. Current mean cost: 4.00002725852
+INFO - 2017-01-21 20:41:01,126 - LSTM_setup - Time calculating cost: 0.2875
+INFO - 2017-01-21 20:41:01,126 - LSTM_setup - Time calculating cost: 0.2875
+INFO - 2017-01-21 20:41:01,126 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:41:01,126 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:41:01,129 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:41:01,129 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:41:04,011 - LSTM_setup - Iteration: 66. Current mean cost: 3.99465006681
+INFO - 2017-01-21 20:41:04,011 - LSTM_setup - Iteration: 66. Current mean cost: 3.99465006681
+INFO - 2017-01-21 20:41:04,011 - LSTM_setup - Time calculating cost: 0.2942
+INFO - 2017-01-21 20:41:04,011 - LSTM_setup - Time calculating cost: 0.2942
+INFO - 2017-01-21 20:41:04,011 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:41:04,011 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:41:04,014 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:41:04,014 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:41:06,551 - LSTM_setup - Iteration: 73. Current mean cost: 3.98924209268
+INFO - 2017-01-21 20:41:06,551 - LSTM_setup - Iteration: 73. Current mean cost: 3.98924209268
+INFO - 2017-01-21 20:41:06,551 - LSTM_setup - Time calculating cost: 0.3142
+INFO - 2017-01-21 20:41:06,551 - LSTM_setup - Time calculating cost: 0.3142
+INFO - 2017-01-21 20:41:06,552 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:41:06,552 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:41:06,555 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:41:06,555 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:41:08,342 - LSTM_setup - Iteration: 79. Current mean cost: 3.98387636092
+INFO - 2017-01-21 20:41:08,342 - LSTM_setup - Iteration: 79. Current mean cost: 3.98387636092
+INFO - 2017-01-21 20:41:08,342 - LSTM_setup - Time calculating cost: 0.2675
+INFO - 2017-01-21 20:41:08,342 - LSTM_setup - Time calculating cost: 0.2675
+INFO - 2017-01-21 20:41:08,342 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:41:08,342 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:41:08,346 - LSTM_setup - Saving complete. Time spent: 0.004
+
+INFO - 2017-01-21 20:41:08,346 - LSTM_setup - Saving complete. Time spent: 0.004
+
+INFO - 2017-01-21 20:41:10,149 - LSTM_setup - Iteration: 84. Current mean cost: 3.97866449155
+INFO - 2017-01-21 20:41:10,149 - LSTM_setup - Iteration: 84. Current mean cost: 3.97866449155
+INFO - 2017-01-21 20:41:10,149 - LSTM_setup - Time calculating cost: 0.6368
+INFO - 2017-01-21 20:41:10,149 - LSTM_setup - Time calculating cost: 0.6368
+INFO - 2017-01-21 20:41:10,149 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:41:10,149 - LSTM_setup - Saving model parameters.
+INFO - 2017-01-21 20:41:10,152 - LSTM_setup - Saving complete. Time spent: 0.003
+
+INFO - 2017-01-21 20:41:10,152 - LSTM_setup - Saving complete. Time spent: 0.003
+
