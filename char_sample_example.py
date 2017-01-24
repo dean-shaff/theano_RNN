@@ -9,7 +9,8 @@ from datasets import CharacterDataset
 if __name__ == '__main__':
 
 	# x = T.tensor3('x')
-	x = T.row('x')
+	x = T.matrix('x')
+	# x = T.row('x')
 
 	char_ds = CharacterDataset("./data/shakespeare.hdf5")
 	char_ds.cut_by_sequence(50)
@@ -27,4 +28,4 @@ if __name__ == '__main__':
 
 	sampler = CharSampler(lstm, char_ds)
 	sampler.compile_functions(x)
-	sampler.sample('d',50)
+	sampler.sample('My name is dean and I like'.lower(),50)

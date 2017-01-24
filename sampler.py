@@ -25,7 +25,6 @@ class CharSampler(object):
 		Compile the functions for training the model.
 		args:
 			- x: The symbolic input to the computational graph
-			- y: The symbolic target for the computational graph 
 		kwargs: 
 			- 
 		"""
@@ -59,12 +58,18 @@ class CharSampler(object):
 		# First thing we need to do is get the seed in the correct data format. 
 		n_char = len(self.ds.chars)
 		char = list(self.ds.chars)
-		ind = char.index(seed)
-		one_hot = np.zeros(n_char)
-		one_hot[ind] = 1.0
-		one_hot = one_hot.reshape((1,n_char))
+		if len(seed) == 1:
+			ind = char.index(seed)
+			one_hot = np.zeros(n_char)
+			one_hot[ind] = 1.0
+			one_hot = one_hot.reshape((1,n_char))
+		elif len(seed) > 1:
+			ind = [char.index(s) for s in seed] 
+			one_hot = np.zeros((len(seed), n_char))
+			one_hot[np.arange(len(seed)), ind] = 1.0 
+		
 		# Now we can sample from the gen_prob_fn
-		prob_distr = self.gen_prob_fn(one_hot, n_steps)
+		prob_distr = self.gen_prob_fn(one_hot,n_steps)
 		# prob_distr = prob_distr.reshape((n_steps, n_char))
 		# pdb.set_trace()
 

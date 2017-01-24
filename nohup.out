@@ -5588,3 +5588,14 @@ INFO - Trainer - Iteration: 300. Current instantaneous cost: 0.862692450822
 INFO - Trainer - Iteration: 400. Current instantaneous cost: 1.20227961273
 INFO - Trainer - Iteration: 500. Current instantaneous cost: 1.13490630174
 INFO - Trainer - Iteration: 600. Current instantaneous cost: 1.19112238978
+INFO - Char_DS - Loading data into memory
+INFO - Char_DS - Data loaded from hdf5 file. Took 0.01 seconds
+
+INFO - Char_DS - One hot vectors generated. Took 0.12 second
+
+INFO - Char_DS - Creating shared variables...
+INFO - Char_DS - Created shared variables. Took 0.47 seconds.
+
+INFO - Trainer - Performing sequence classification task.
+INFO - Trainer - Using rmsprop method
+INFO - Trainer - Compiling theano functions...

@@ -108,6 +108,13 @@ class SGD(object):
 				y: self.ds.train_obs[(index*mb):(index+1)*mb]
 			}
 		)
+
+		self.cost_fn = theano.function(	
+			inputs = [x,y],
+			outputs = cost
+		)
+			
+
 		self.error_fn = theano.function(
 			inputs = [x,y],
 			outputs = error 
@@ -193,7 +200,8 @@ class SGD(object):
 				eval_time = time.time() - t0
 				if (i % 100 == 0):
 					self.SGDlogger.info("Iteration: {}. Current instantaneous cost: {}".format(i, cur_cost))
-
+					test_cost = self.cost_fn(test_in, test_obs)
+					self.SGDlogger.info("Current test cost: {}".format(test_cost))
 				# test to see if we're making improvement.
 				if (best_cost - accum_cost/accum_count > 0.005):
 					best_cost = accum_cost/accum_count

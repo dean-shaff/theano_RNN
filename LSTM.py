@@ -15,6 +15,7 @@ class LSTMMultiLayer(object):
 		Create the computational graph for a multilayer LSTM.
 		args:
 			- X (theano.tensor.tensor): The symblic input to the computational graph
+				X dimensions should be (sequence_length, batch_size, char_length) 
 			- dim (list): A list of dictionaries containing the dimensions of each unit in the LSTM. 
 				This gets passed to LSTMLayer
 		kwargs:
@@ -95,37 +96,63 @@ class LSTMMultiLayer(object):
 			return return_vals
 
 		self.recurrent_step = recurrent_step
-
+		
+		# This is one way to go about this	
 		outputs_info = [{'initial':None}]
 		for i in xrange(len(dims)):
 			outputs_info.append({'initial':T.zeros((X.shape[1],dims[i]['hid_dim']))})
 			outputs_info.append({'initial':T.zeros((X.shape[1],dims[i]['hid_dim']))})
 
 
-		out, _ = theano.scan(self.recurrent_step,
+		out_full_sequence, _ = theano.scan(self.recurrent_step,
 									truncate_gradient=truncate,
 									sequences=X,
 									outputs_info=outputs_info,
 									n_steps=X.shape[0])
 
+		# Here is another, where we feed the output back in as input. 
+		outputs_info = [{'initial':X[0]}]
+		for i in xrange(len(dims)):
+			outputs_info.append({'initial':T.zeros((X.shape[1],dims[i]['hid_dim']))})
+			outputs_info.append({'initial':T.zeros((X.shape[1],dims[i]['hid_dim']))})
+
+
+		out_feedback, _ = theano.scan(self.recurrent_step,
+									truncate_gradient=truncate,
+									outputs_info=outputs_info,
+									n_steps=X.shape[0])
+
+
 		# self.b_out = out[1]
-		self.pred = out[0]
+		self.pred = out_feedback[0]
 	
 	def sequence_sampling(self,seed,n_steps):
 		"""
 		Define the outputs for LSTM that feeds back into itself. Basically the same thing as in __init__
 		but we feed output back in as input.
+		
 		"""
-		outputs_info = [{'initial':seed}]
+		
+		outputs_info = [{'initial':None}]
+
 		for i in xrange(len(self.dims)):
 			outputs_info.append({'initial':T.zeros((1,self.dims[i]['hid_dim']))}) 		
 			outputs_info.append({'initial':T.zeros((1,self.dims[i]['hid_dim']))}) 		
 	
+	
 		out, _ = theano.scan(self.recurrent_step,
-								outputs_info=outputs_info
-								n_steps=n_steps)
+								sequences=seed,									
+								outputs_info=outputs_info,
+								n_steps=seed.shape[0])
+		
+		outputs_info[0] = out[0][-1]
 
-		seq_pred = out[0]
+		out1,_ = theano.scan(self.recurrent_step,
+							outputs_info=outputs_info,
+							n_steps=n_steps-seed.shape[0])
+
+		
+		seq_pred = T.concatenate([out[0],out1[0]])
 		return seq_pred
 
 
