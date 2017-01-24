@@ -27,7 +27,8 @@ class LSTMMultiLayer(object):
 		self.logger = logging_config("LSTM_multilayer",logfile=logfile)
 
 		uni = np.random.uniform
-
+		
+		self.dims = dims
 		self.layers = []
 		self.params = []
 
@@ -100,6 +101,7 @@ class LSTMMultiLayer(object):
 			outputs_info.append({'initial':T.zeros((X.shape[1],dims[i]['hid_dim']))})
 			outputs_info.append({'initial':T.zeros((X.shape[1],dims[i]['hid_dim']))})
 
+
 		out, _ = theano.scan(self.recurrent_step,
 									truncate_gradient=truncate,
 									sequences=X,
@@ -108,6 +110,25 @@ class LSTMMultiLayer(object):
 
 		# self.b_out = out[1]
 		self.pred = out[0]
+	
+	def sequence_sampling(self,seed,n_steps):
+		"""
+		Define the outputs for LSTM that feeds back into itself. Basically the same thing as in __init__
+		but we feed output back in as input.
+		"""
+		outputs_info = [{'initial':seed}]
+		for i in xrange(len(self.dims)):
+			outputs_info.append({'initial':T.zeros((1,self.dims[i]['hid_dim']))}) 		
+			outputs_info.append({'initial':T.zeros((1,self.dims[i]['hid_dim']))}) 		
+	
+		out, _ = theano.scan(self.recurrent_step,
+								outputs_info=outputs_info
+								n_steps=n_steps)
+
+		seq_pred = out[0]
+		return seq_pred
+
+
 
 	def save_params(self,filename,**kwargs):
 		"""
